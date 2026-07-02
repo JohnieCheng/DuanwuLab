@@ -1,0 +1,25 @@
+# ── Build output ──
+target/
+dist/
+
+# ── macOS ──
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# ── Editor ──
+*.swp
+*.swo
+*~
+.idea/
+
+# ── Env / secrets ──
+.env
+.env.*
+!.env.example
+
+# ── Misc ──
+Thumbs.db
+*.log
