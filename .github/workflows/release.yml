@@ -60,6 +60,22 @@ jobs:
       - name: Build Tauri app
         run: cargo tauri build --target ${{ matrix.target }}
 
+      - name: Ad-hoc sign macOS app
+        if: matrix.suffix == 'macos-arm64'
+        run: |
+          BUNDLE="src-tauri/target/${{ matrix.target }}/release/bundle"
+          APP="$BUNDLE/macos/duanwu-lab.app"
+          codesign --force --deep --sign - "$APP"
+          echo "Ad-hoc signed: $APP"
+
+          # 重新打包 dmg（旧的 dmg 里是未签名的 app）
+          DMG_OLD=$(ls "$BUNDLE/dmg"/*.dmg | head -1)
+          DMG_NEW="$BUNDLE/dmg/duanwu-lab-signed.dmg"
+          hdiutil create -srcfolder "$BUNDLE/macos" -volname "duanwu-lab" -fs HFS+ -format UDZO "$DMG_NEW"
+          rm -f "$DMG_OLD"
+          mv "$DMG_NEW" "$DMG_OLD"
+          echo "DMG repacked"
+
       - name: Normalize asset names
         shell: bash
         run: |
