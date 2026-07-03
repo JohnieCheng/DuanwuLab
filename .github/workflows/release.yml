@@ -14,10 +14,13 @@ jobs:
         include:
           - platform: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
+            suffix: linux-amd64
           - platform: macos-latest
             target: aarch64-apple-darwin
+            suffix: macos-arm64
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
+            suffix: windows-x64
 
     runs-on: ${{ matrix.platform }}
 
@@ -47,20 +50,44 @@ jobs:
         run: dx bundle --release
 
       - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: cargo tauri build --target ${{ matrix.target }}
+
+      - name: Normalize asset names
+        shell: bash
+        run: |
+          cd src-tauri/target/${{ matrix.target }}/release/bundle
+          TAG="${{ github.ref_name }}"
+          OS="-${{ matrix.suffix }}"
+
+          for f in *; do
+            [ -f "$f" ] || continue
+            case "$f" in
+              *.dmg)          ext="dmg" ;;
+              *.deb)          ext="deb" ;;
+              *.rpm)          ext="rpm" ;;
+              *.AppImage)     ext="AppImage" ;;
+              *.msi)          ext="msi" ;;
+              *.exe)          ext="exe" ;;
+              *.app.tar.gz)   ext="app.tar.gz" ;;
+              *)              continue ;;
+            esac
+            new="duanwu-lab-${TAG}${OS}.${ext}"
+            mv "$f" "$new"
+            echo "Renamed: $f -> $new"
+          done
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'duanwu-lab v__VERSION__'
-          releaseBody: |
+          tag_name: ${{ github.ref_name }}
+          name: duanwu-lab ${{ github.ref_name }}
+          body: |
             | 平台 | 架构 |
             |------|------|
             | macOS | ARM64 |
             | Windows | x64 |
             | Linux | x64 |
-
-            > 自动构建于 GitHub Actions
-          releaseDraft: true
-          prerelease: false
-          args: --target ${{ matrix.target }}
+          draft: true
+          files: src-tauri/target/${{ matrix.target }}/release/bundle/duanwu-lab-*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
