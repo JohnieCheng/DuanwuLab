@@ -60,16 +60,23 @@ jobs:
       - name: Build Tauri app
         run: cargo tauri build --target ${{ matrix.target }}
 
+      - name: Read app name
+        id: meta
+        shell: bash
+        run: |
+          APP=$(jq -r '.productName' src-tauri/tauri.conf.json)
+          echo "app=$APP" >> "$GITHUB_OUTPUT"
+
       - name: Ad-hoc sign macOS app
         if: matrix.suffix == 'macos-arm64'
         run: |
           BUNDLE=$(find src-tauri/target -type d -name bundle -path "*/release/*" 2>/dev/null | head -1)
-          APP="$BUNDLE/macos/duanwu-lab.app"
+          APP="$BUNDLE/macos/${{ steps.meta.outputs.app }}.app"
           codesign --force --deep --sign - "$APP"
           # repack dmg with signed app
           DMG_OLD=$(ls "$BUNDLE/dmg"/*.dmg | head -1)
-          DMG_NEW="$BUNDLE/dmg/duanwu-lab-signed.dmg"
-          hdiutil create -srcfolder "$BUNDLE/macos" -volname "duanwu-lab" -fs HFS+ -format UDZO "$DMG_NEW"
+          DMG_NEW="$BUNDLE/dmg/tmp-signed.dmg"
+          hdiutil create -srcfolder "$BUNDLE/macos" -volname "${{ steps.meta.outputs.app }}" -fs HFS+ -format UDZO "$DMG_NEW"
           rm -f "$DMG_OLD"
           mv "$DMG_NEW" "$DMG_OLD"
 
@@ -77,28 +84,22 @@ jobs:
         shell: bash
         run: |
           BUNDLE=$(find src-tauri/target -type d -name bundle -path "*/release/*" 2>/dev/null | head -1)
-          echo "BUNDLE=$BUNDLE" >> "$GITHUB_ENV"
-
           ASSETS="$RUNNER_TEMP/assets"
           mkdir -p "$ASSETS"
           cd "$BUNDLE"
 
+          NAME="${{ steps.meta.outputs.app }}"
           TAG="${{ github.ref_name }}"
           SUFFIX="${{ matrix.suffix }}"
 
           for f in *; do
             [ -f "$f" ] || continue
+            ext="${f##*.}"
             case "$f" in
-              *.dmg)          ext="dmg" ;;
-              *.deb)          ext="deb" ;;
-              *.rpm)          ext="rpm" ;;
-              *.AppImage)     ext="AppImage" ;;
-              *.msi)          ext="msi" ;;
-              *.exe)          ext="exe" ;;
-              *.app.tar.gz)   ext="app.tar.gz" ;;
-              *)              continue ;;
+              *.app.tar.gz) ext="app.tar.gz" ;;
+              *.AppImage)   ext="AppImage" ;;
             esac
-            new="duanwu-lab-${TAG}-${SUFFIX}.${ext}"
+            new="${NAME}-${TAG}-${SUFFIX}.${ext}"
             cp "$f" "$ASSETS/$new"
             echo " -> $new"
           done
@@ -108,7 +109,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: duanwu-lab ${{ github.ref_name }}
+          name: ${{ steps.meta.outputs.app }} ${{ github.ref_name }}
           body: |
             | 平台 | 架构 |
             |------|------|
