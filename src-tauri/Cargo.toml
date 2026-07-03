@@ -1,6 +1,6 @@
 [package]
 name = "duanwu-lab"
-version = "0.0.1"
+version.workspace = true
 description = "A Tauri App"
 authors = ["johnie"]
 edition = "2021"

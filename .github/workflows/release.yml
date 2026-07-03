@@ -111,8 +111,8 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: ${{ steps.meta.outputs.app }} ${{ github.ref_name }}
           body: |
-            | 平台 | 架构 |
-            |------|------|
+            | Platform | Arch |
+            |----------|------|
             | macOS | ARM64 |
             | Windows | x64 |
             | Linux | x64 |
