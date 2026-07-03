@@ -63,25 +63,28 @@ jobs:
       - name: Ad-hoc sign macOS app
         if: matrix.suffix == 'macos-arm64'
         run: |
-          BUNDLE="src-tauri/target/${{ matrix.target }}/release/bundle"
+          BUNDLE=$(find src-tauri/target -type d -name bundle -path "*/release/*" 2>/dev/null | head -1)
           APP="$BUNDLE/macos/duanwu-lab.app"
           codesign --force --deep --sign - "$APP"
-          echo "Ad-hoc signed: $APP"
-
-          # 重新打包 dmg（旧的 dmg 里是未签名的 app）
+          # repack dmg with signed app
           DMG_OLD=$(ls "$BUNDLE/dmg"/*.dmg | head -1)
           DMG_NEW="$BUNDLE/dmg/duanwu-lab-signed.dmg"
           hdiutil create -srcfolder "$BUNDLE/macos" -volname "duanwu-lab" -fs HFS+ -format UDZO "$DMG_NEW"
           rm -f "$DMG_OLD"
           mv "$DMG_NEW" "$DMG_OLD"
-          echo "DMG repacked"
 
       - name: Normalize asset names
         shell: bash
         run: |
-          cd src-tauri/target/${{ matrix.target }}/release/bundle
+          BUNDLE=$(find src-tauri/target -type d -name bundle -path "*/release/*" 2>/dev/null | head -1)
+          echo "BUNDLE=$BUNDLE" >> "$GITHUB_ENV"
+
+          ASSETS="$RUNNER_TEMP/assets"
+          mkdir -p "$ASSETS"
+          cd "$BUNDLE"
+
           TAG="${{ github.ref_name }}"
-          OS="-${{ matrix.suffix }}"
+          SUFFIX="${{ matrix.suffix }}"
 
           for f in *; do
             [ -f "$f" ] || continue
@@ -95,10 +98,11 @@ jobs:
               *.app.tar.gz)   ext="app.tar.gz" ;;
               *)              continue ;;
             esac
-            new="duanwu-lab-${TAG}${OS}.${ext}"
-            mv "$f" "$new"
-            echo "Renamed: $f -> $new"
+            new="duanwu-lab-${TAG}-${SUFFIX}.${ext}"
+            cp "$f" "$ASSETS/$new"
+            echo " -> $new"
           done
+          echo "ASSETS=$ASSETS" >> "$GITHUB_ENV"
 
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
@@ -112,6 +116,6 @@ jobs:
             | Windows | x64 |
             | Linux | x64 |
           draft: true
-          files: src-tauri/target/${{ matrix.target }}/release/bundle/duanwu-lab-*
+          files: ${{ env.ASSETS }}/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
