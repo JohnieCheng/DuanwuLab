@@ -86,14 +86,14 @@ jobs:
           BUNDLE=$(find . -type d -name bundle -path "*/release/*" 2>/dev/null | head -1)
           ASSETS="$RUNNER_TEMP/assets"
           mkdir -p "$ASSETS"
-          cd "$BUNDLE"
 
           NAME="${{ steps.meta.outputs.app }}"
           TAG="${{ github.ref_name }}"
           SUFFIX="${{ matrix.suffix }}"
 
-          for f in *; do
-            [ -f "$f" ] || continue
+          find "$BUNDLE" -type f \( -name "*.dmg" -o -name "*.deb" -o -name "*.rpm" \
+            -o -name "*.AppImage" -o -name "*.msi" -o -name "*.exe" \
+            -o -name "*.app.tar.gz" \) | while read -r f; do
             ext="${f##*.}"
             case "$f" in
               *.app.tar.gz) ext="app.tar.gz" ;;
