@@ -70,7 +70,7 @@ jobs:
       - name: Ad-hoc sign macOS app
         if: matrix.suffix == 'macos-arm64'
         run: |
-          BUNDLE=$(find src-tauri/target -type d -name bundle -path "*/release/*" 2>/dev/null | head -1)
+          BUNDLE=$(find . -type d -name bundle -path "*/release/*" 2>/dev/null | head -1)
           APP="$BUNDLE/macos/${{ steps.meta.outputs.app }}.app"
           codesign --force --deep --sign - "$APP"
           # repack dmg with signed app
@@ -83,7 +83,7 @@ jobs:
       - name: Normalize asset names
         shell: bash
         run: |
-          BUNDLE=$(find src-tauri/target -type d -name bundle -path "*/release/*" 2>/dev/null | head -1)
+          BUNDLE=$(find . -type d -name bundle -path "*/release/*" 2>/dev/null | head -1)
           ASSETS="$RUNNER_TEMP/assets"
           mkdir -p "$ASSETS"
           cd "$BUNDLE"
