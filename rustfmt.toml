@@ -1,0 +1,13 @@
+max_width = 100
+tab_spaces = 4
+edition = "2024"
+newline_style = "Unix"
+
+imports_granularity = "Module"
+group_imports = "StdExternalCrate"
+reorder_imports = true
+
+use_small_heuristics = "Max"
+
+format_strings = true
+reorder_impl_items = true

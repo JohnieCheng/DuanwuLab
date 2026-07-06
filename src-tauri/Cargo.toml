@@ -3,7 +3,7 @@ name = "duanwu-lab"
 version.workspace = true
 description = "A Tauri App"
 authors = ["johnie"]
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
