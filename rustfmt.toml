@@ -1,13 +1,21 @@
+# 行宽上限
 max_width = 100
+# 缩进空格数
 tab_spaces = 4
+# Rust edition 格式化规则
 edition = "2024"
-newline_style = "Unix"
 
+# 每个 import 独立一行，Git diff 更清晰
 imports_granularity = "Module"
+# import 分组：std → 第三方 → 内部 crate
 group_imports = "StdExternalCrate"
+# 自动排序 import
 reorder_imports = true
 
+# 减少不必要的换行
 use_small_heuristics = "Max"
 
+# 格式化字符串字面量
 format_strings = true
+# impl 内方法按字母排序
 reorder_impl_items = true
