@@ -1,21 +1,21 @@
-# 行宽上限
+# [stable]
+# Max line width
 max_width = 100
-# 缩进空格数
+# Indentation spaces
 tab_spaces = 4
-# Rust edition 格式化规则
+# Rust edition formatting rules
 edition = "2024"
-
-# 每个 import 独立一行，Git diff 更清晰
-imports_granularity = "Module"
-# import 分组：std → 第三方 → 内部 crate
-group_imports = "StdExternalCrate"
-# 自动排序 import
+# Reduce unnecessary line wrapping
+use_small_heuristics = "Max"
+# Auto-sort imports
 reorder_imports = true
 
-# 减少不必要的换行
-use_small_heuristics = "Max"
-
-# 格式化字符串字面量
+# [unstable]
+# One import per line, cleaner git diffs
+imports_granularity = "Module"
+# Group imports: std → external → crate
+group_imports = "StdExternalCrate"
+# Format string literals
 format_strings = true
-# impl 内方法按字母排序
+# Sort methods in impl blocks
 reorder_impl_items = true
