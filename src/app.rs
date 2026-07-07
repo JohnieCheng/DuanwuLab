@@ -1,83 +1,63 @@
 #![allow(non_snake_case)]
 
+use crate::components::json_formatter::JsonFormatter;
 use dioxus::prelude::*;
-use serde::{Deserialize, Serialize};
-use wasm_bindgen::prelude::*;
 
 static CSS: Asset = asset!("/assets/styles.css");
-static TAURI_ICON: Asset = asset!("/assets/tauri.svg");
-static DIOXUS_ICON: Asset = asset!("/assets/dioxus.png");
-
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = ["window", "__TAURI__", "core"])]
-    async fn invoke(cmd: &str, args: JsValue) -> JsValue;
-}
-
-#[derive(Serialize, Deserialize)]
-struct GreetArgs<'a> {
-    name: &'a str,
-}
 
 pub fn App() -> Element {
-    let mut name = use_signal(|| String::new());
-    let mut greet_msg = use_signal(|| String::new());
-
-    let greet = move |event: FormEvent| async move {
-        event.prevent_default();
-
-        if name.read().is_empty() {
-            return;
-        }
-
-        let name = name.read();
-        let args = serde_wasm_bindgen::to_value(&GreetArgs { name: &*name }).unwrap();
-        // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-        let new_msg = invoke("greet", args).await.as_string().unwrap();
-        greet_msg.set(new_msg);
-    };
-
     rsx! {
         link { rel: "stylesheet", href: CSS }
-        main {
-            class: "container",
-            h1 { "Welcome to Tauri + Dioxus" }
+        SidebarLayout {}
+    }
+}
 
-            div {
-                class: "row",
-                a {
-                    href: "https://tauri.app",
-                    target: "_blank",
-                    img {
-                        src: TAURI_ICON,
-                        class: "logo tauri",
-                         alt: "Tauri logo"
+pub fn SidebarLayout() -> Element {
+    rsx! {
+        div { class: "w-screen h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900",
+
+            aside { class: "w-64 h-full flex flex-col flex-shrink-0 overflow-hidden border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950",
+                div { class: "p-4 flex-shrink-0",
+                    div { class: "flex items-center gap-3",
+                        div { class: "h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700" }
+                        div { class: "flex-auto truncate",
+                            p { class: "text-sm font-medium text-gray-900 dark:text-white", "Duanwu" }
+                            p { class: "text-xs text-gray-500 dark:text-gray-400", "duanwu@example.com" }
+                        }
                     }
                 }
-                a {
-                    href: "https://dioxuslabs.com/",
-                    target: "_blank",
-                    img {
-                        src: DIOXUS_ICON,
-                        class: "logo dioxus",
-                        alt: "Dioxus logo"
-                    }
-                }
-            }
-            p { "Click on the Tauri and Dioxus logos to learn more." }
 
-            form {
-                class: "row",
-                onsubmit: greet,
-                input {
-                    id: "greet-input",
-                    placeholder: "Enter a name...",
-                    value: "{name}",
-                    oninput: move |event| name.set(event.value())
+                nav { class: "flex-1 min-h-0 space-y-1 p-2 overflow-y-auto",
+                    NavItem { href: "#", label: "JSON Formatter", icon: "{{}}", active: true }
                 }
-                button { r#type: "submit", "Greet" }
             }
-            p { "{greet_msg}" }
+
+            main { class: "flex-1 min-w-0 h-full flex flex-col overflow-hidden",
+
+                header { class: "flex h-14 flex-shrink-0 items-center gap-4 border-b border-gray-200 bg-white px-6 dark:border-gray-800 dark:bg-gray-950",
+                    h1 { class: "text-sm font-semibold text-gray-900 dark:text-white", "JSON Formatter" }
+                }
+
+                div { class: "flex-1 min-h-0 w-full overflow-y-auto p-6",
+                    JsonFormatter{}
+                }
+            }
+        }
+    }
+}
+
+#[component]
+fn NavItem(href: String, label: String, icon: String, active: bool) -> Element {
+    let base = "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors";
+    let state = if active {
+        "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white"
+    } else {
+        "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+    };
+    rsx! {
+        a { href: "{href}", class: "{base} {state}",
+            span { class: "font-mono text-base", "{icon}" }
+            "{label}"
         }
     }
 }

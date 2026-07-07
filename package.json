@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "dev": "concurrently \"npx @tailwindcss/cli -i assets/tailwind.css -o assets/styles.css --watch\" \"dx serve --port 1420\"",
+    "build:css": "npx @tailwindcss/cli -i assets/tailwind.css -o assets/styles.css --minify",
+    "build": "npm run build:css && dx bundle --release"
+  },
+  "dependencies": {
+    "@tailwindcss/cli": "^4.3.2",
+    "tailwindcss": "^4.3.2"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3"
+  }
+}

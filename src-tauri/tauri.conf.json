@@ -3,9 +3,9 @@
   "productName": "duanwu-lab",
   "identifier": "com.johnie.duanwu-lab",
   "build": {
-    "beforeDevCommand": "dx serve --port 1420 --interactive false",
+    "beforeDevCommand": "npx @tailwindcss/cli -i assets/tailwind.css -o assets/styles.css && npx @tailwindcss/cli -i assets/tailwind.css -o assets/styles.css --watch & dx serve --port 1420 --interactive false",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "dx bundle --release",
+    "beforeBuildCommand": "npm run build",
     "frontendDist": "../dist/public"
   },
   "app": {

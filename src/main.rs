@@ -1,4 +1,5 @@
 mod app;
+mod components;
 
 use app::App;
 use dioxus::prelude::*;

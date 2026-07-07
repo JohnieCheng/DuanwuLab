@@ -54,8 +54,8 @@ jobs:
             patchelf \
             libasound2-dev
 
-      - name: Build Dioxus frontend
-        run: dx bundle --release
+      - name: Install npm dependencies
+        run: npm ci
 
       - name: Build Tauri app
         run: cargo tauri build --target ${{ matrix.target }}

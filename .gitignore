@@ -1,6 +1,7 @@
 # ── Build output ──
 target/
 dist/
+node_modules/
 
 # ── macOS ──
 .DS_Store
