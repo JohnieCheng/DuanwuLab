@@ -3,6 +3,9 @@ use serde_json::Value;
 #[tauri::command]
 pub fn format_json(input: &str, repair: bool) -> Result<String, String> {
     let raw = input.trim();
+    if raw.is_empty() {
+        return Ok(String::new());
+    }
     let (result, repaired) = if repair {
         match parse(raw) {
             Ok(v) => (v, false),

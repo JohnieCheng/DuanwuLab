@@ -1,12 +1,22 @@
 #![allow(non_snake_case)]
 
 use crate::components::json_formatter::JsonFormatter;
+use crate::context::error::GlobalErrorContext;
 use dioxus::prelude::*;
 
 static CSS: Asset = asset!("/assets/styles.css");
 
 pub fn App() -> Element {
+    let mut error_message = use_signal(|| None::<String>);
+    use_context_provider(move || GlobalErrorContext { message: error_message });
+
     rsx! {
+        if let Some(err) = error_message.read().as_ref() {
+            div { class: "fixed top-4 right-4 bg-red-500 text-white p-4 rounded shadow-lg z-50",
+                span { "{err}" }
+                button { onclick: move |_| error_message.set(None), class: "ml-4 font-bold select-none", "✕" }
+            }
+        }
         link { rel: "stylesheet", href: CSS }
         SidebarLayout {}
     }
@@ -14,9 +24,9 @@ pub fn App() -> Element {
 
 pub fn SidebarLayout() -> Element {
     rsx! {
-        div { class: "w-screen h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900",
+        div { class: "w-screen h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900 select-none",
 
-            aside { class: "w-64 h-full flex flex-col flex-shrink-0 overflow-hidden border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950",
+            aside { class: "w-64 h-full flex flex-col flex-shrink-0 overflow-hidden border-r border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950 select-none",
                 div { class: "p-4 flex-shrink-0",
                     div { class: "flex items-center gap-3",
                         div { class: "h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-700" }
@@ -34,11 +44,11 @@ pub fn SidebarLayout() -> Element {
 
             main { class: "flex-1 min-w-0 h-full flex flex-col overflow-hidden",
 
-                header { class: "flex h-14 flex-shrink-0 items-center gap-4 border-b border-gray-200 bg-white px-6 dark:border-gray-800 dark:bg-gray-950",
+                header { class: "flex h-14 flex-shrink-0 items-center gap-4 border-b border-gray-200 bg-white px-6 dark:border-gray-800 dark:bg-gray-950 select-none",
                     h1 { class: "text-sm font-semibold text-gray-900 dark:text-white", "JSON Formatter" }
                 }
 
-                div { class: "flex-1 min-h-0 w-full overflow-y-auto p-6",
+                div { class: "flex-1 min-h-0 w-full overflow-y-auto p-6 select-text",
                     JsonFormatter{}
                 }
             }
