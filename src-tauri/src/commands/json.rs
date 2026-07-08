@@ -46,10 +46,10 @@ fn repair_json(s: &str) -> String {
     // 4. missing closing braces
     let (open_c, close_c) = (out.matches('{').count(), out.matches('}').count());
     let (open_s, close_s) = (out.matches('[').count(), out.matches(']').count());
-    for _ in 0..(open_c.saturating_sub(close_c)) {
+    for _ in 0..open_c.saturating_sub(close_c) {
         out.push('}');
     }
-    for _ in 0..(open_s.saturating_sub(close_s)) {
+    for _ in 0..open_s.saturating_sub(close_s) {
         out.push(']');
     }
 
