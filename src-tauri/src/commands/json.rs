@@ -46,8 +46,12 @@ fn repair_json(s: &str) -> String {
     // 4. missing closing braces
     let (open_c, close_c) = (out.matches('{').count(), out.matches('}').count());
     let (open_s, close_s) = (out.matches('[').count(), out.matches(']').count());
-    for _ in 0..(open_c.saturating_sub(close_c)) { out.push('}'); }
-    for _ in 0..(open_s.saturating_sub(close_s)) { out.push(']'); }
+    for _ in 0..(open_c.saturating_sub(close_c)) {
+        out.push('}');
+    }
+    for _ in 0..(open_s.saturating_sub(close_s)) {
+        out.push(']');
+    }
 
     out
 }
@@ -66,9 +70,19 @@ fn fix_unquoted_keys(input: &str) -> String {
             result.push(c);
             i += 1;
             while i < len {
-                if chars[i] == '\\' { result.push(chars[i]); i += 1; if i < len { result.push(chars[i]); } }
-                else if chars[i] == '"' { result.push(chars[i]); i += 1; break; }
-                else { result.push(chars[i]); }
+                if chars[i] == '\\' {
+                    result.push(chars[i]);
+                    i += 1;
+                    if i < len {
+                        result.push(chars[i]);
+                    }
+                } else if chars[i] == '"' {
+                    result.push(chars[i]);
+                    i += 1;
+                    break;
+                } else {
+                    result.push(chars[i]);
+                }
                 i += 1;
             }
             continue;
@@ -83,12 +97,16 @@ fn fix_unquoted_keys(input: &str) -> String {
 
         // potential unquoted key: capture the word
         let start = i;
-        while i < len && (chars[i].is_alphanumeric() || chars[i] == '_') { i += 1; }
+        while i < len && (chars[i].is_alphanumeric() || chars[i] == '_') {
+            i += 1;
+        }
         let word: String = chars[start..i].iter().collect();
 
         // skip whitespace
         let ws_start = i;
-        while i < len && chars[i].is_whitespace() { i += 1; }
+        while i < len && chars[i].is_whitespace() {
+            i += 1;
+        }
 
         // check if followed by ':'
         if i < len && chars[i] == ':' {
@@ -96,13 +114,17 @@ fn fix_unquoted_keys(input: &str) -> String {
             result.push_str(&word);
             result.push('"');
             // restore whitespace
-            for k in ws_start..i { result.push(chars[k]); }
+            for k in ws_start..i {
+                result.push(chars[k]);
+            }
             result.push(':');
             i += 1;
         } else {
             // not a key, restore word and whitespace
             result.push_str(&word);
-            for k in ws_start..i { result.push(chars[k]); }
+            for k in ws_start..i {
+                result.push(chars[k]);
+            }
         }
     }
 

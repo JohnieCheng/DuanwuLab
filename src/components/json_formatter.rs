@@ -1,8 +1,8 @@
 use dioxus::prelude::*;
 use serde::Serialize;
 use serde_json::Value;
-use wasm_bindgen::prelude::wasm_bindgen;
 use wasm_bindgen::JsValue;
+use wasm_bindgen::prelude::wasm_bindgen;
 
 #[wasm_bindgen]
 extern "C" {
