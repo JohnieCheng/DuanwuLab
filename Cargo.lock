@@ -1577,6 +1577,7 @@ version = "0.0.1"
 dependencies = [
  "dioxus",
  "dioxus-logger",
+ "gloo-timers",
  "js-sys",
  "serde",
  "serde-wasm-bindgen",

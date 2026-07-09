@@ -1,4 +1,4 @@
-use crate::commands::json;
+use crate::commands::json_format;
 
 mod commands;
 
@@ -6,7 +6,7 @@ mod commands;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![json::format_json])
+        .invoke_handler(tauri::generate_handler![json_format::format_json])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

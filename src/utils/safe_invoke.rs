@@ -1,7 +1,8 @@
-use crate::context::error::GlobalErrorContext;
 use dioxus::prelude::*;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::wasm_bindgen;
+
+use crate::context::error::GlobalErrorContext;
 
 #[wasm_bindgen]
 extern "C" {
@@ -9,6 +10,12 @@ extern "C" {
     async fn invoke(cmd: &str, args: JsValue) -> Result<JsValue, JsValue>;
 }
 
+/// Call a Tauri backend command, serializing the request and deserializing
+/// the response. Errors are automatically written into the global error context
+/// so the toast in `App` picks them up.
+///
+/// Returns `None` on failure — the caller should treat that as "an error was
+/// already reported".
 pub async fn safe_invoke<T, REQ>(
     cmd: &str,
     args: REQ,
@@ -18,7 +25,7 @@ where
     T: for<'de> serde::Deserialize<'de>,
     REQ: serde::Serialize,
 {
-    // 1. Serialize request parameters
+    // 1. Serialize request parameters to JS values
     let js_args = match serde_wasm_bindgen::to_value(&args) {
         Ok(v) => v,
         Err(e) => {
@@ -27,7 +34,7 @@ where
         }
     };
 
-    // 2. Call the underlying invoke (the invoke signature should be -> Result<JsValue, JsValue> here)
+    // 2. Call the Tauri IPC bridge
     match invoke(cmd, js_args).await {
         Ok(raw_js_val) => {
             // 3. Deserialize the successful response from the backend
@@ -40,7 +47,7 @@ where
             }
         }
         Err(js_err) => {
-            // 4. Global interception: Catch the Result::Err from the backend and insert it directly into the global context
+            // 4. Backend returned an error — route it into the global error context
             let err_msg = js_err.as_string().unwrap_or_else(|| "Unknown backend error".into());
             error_ctx.message.set(Some(err_msg));
             None
