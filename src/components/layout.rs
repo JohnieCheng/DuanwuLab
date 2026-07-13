@@ -1,9 +1,41 @@
 use dioxus::prelude::*;
+use strum::{EnumIter, IntoEnumIterator};
 
+use crate::components::base64::Base64;
 use crate::components::json_viewer::JsonFormatter;
 
+#[derive(Clone, Copy, PartialEq, EnumIter)]
+pub enum Page {
+    JsonFormatter,
+    Base64,
+}
+
+impl Page {
+    fn label(&self) -> &'static str {
+        match self {
+            Page::JsonFormatter => "JSON Formatter",
+            Page::Base64 => "Base64",
+        }
+    }
+
+    fn icon(&self) -> &'static str {
+        match self {
+            Page::JsonFormatter => "{{}}",
+            Page::Base64 => "A⟷a",
+        }
+    }
+
+    fn render(&self) -> Element {
+        match self {
+            Page::JsonFormatter => rsx! { JsonFormatter{} },
+            Page::Base64 => rsx! { Base64{} },
+        }
+    }
+}
+
 /// Top-level layout: sidebar navigation + main content area.
-pub fn SidebarLayout() -> Element {
+#[component]
+pub fn SidebarLayout(page: Signal<Page>) -> Element {
     rsx! {
         div { class: "w-screen h-screen flex overflow-hidden bg-gray-50 dark:bg-gray-900 select-none",
 
@@ -19,18 +51,29 @@ pub fn SidebarLayout() -> Element {
                 }
 
                 nav { class: "flex-1 min-h-0 space-y-1 p-2 overflow-y-auto",
-                    NavItem { href: "#", label: "JSON Formatter", icon: "{{}}", active: true }
+                    {
+                        Page::iter().map(|pg| {
+                            rsx! {
+                                NavItem {
+                                    label: pg.label().to_string(),
+                                    icon: pg.icon().to_string(),
+                                    active: *page.read() == pg,
+                                    onclick: move |_| page.set(pg),
+                                }
+                            }
+                        })
+                    }
                 }
             }
 
             main { class: "flex-1 min-w-0 h-full flex flex-col overflow-hidden",
 
                 header { class: "flex h-14 flex-shrink-0 items-center gap-4 border-b border-gray-200 bg-white px-6 dark:border-gray-800 dark:bg-gray-950 select-none",
-                    h1 { class: "text-sm font-semibold text-gray-900 dark:text-white", "JSON Formatter" }
+                    h1 { class: "text-sm font-semibold text-gray-900 dark:text-white", "{page.read().label()}" }
                 }
 
                 div { id: "main-scroll", class: "flex-1 min-h-0 w-full overflow-y-auto p-6 select-text",
-                    JsonFormatter{}
+                    { page.read().render() }
                 }
             }
         }
@@ -39,8 +82,14 @@ pub fn SidebarLayout() -> Element {
 
 /// Single item in the sidebar navigation.
 #[component]
-fn NavItem(href: String, label: String, icon: String, active: bool) -> Element {
-    let base = "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors";
+fn NavItem(
+    label: String,
+    icon: String,
+    active: bool,
+    onclick: EventHandler<MouseEvent>,
+) -> Element {
+    let base = "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors \
+                cursor-pointer select-none";
     let state = if active {
         "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white"
     } else {
@@ -48,7 +97,7 @@ fn NavItem(href: String, label: String, icon: String, active: bool) -> Element {
          dark:hover:bg-gray-800 dark:hover:text-white"
     };
     rsx! {
-        a { href: "{href}", class: "{base} {state}",
+        div { class: "{base} {state}", onclick: move |e| onclick.call(e),
             span { class: "font-mono text-base", "{icon}" }
             "{label}"
         }

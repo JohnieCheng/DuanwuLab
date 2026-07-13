@@ -164,6 +164,7 @@ pub fn JsonFormatter() -> Element {
         }
     });
 
+    // Global keyboard shortcut: Ctrl/Cmd+Enter triggers Format when focus is in the input textarea.
     use_effect(move || {
         let js_code = r#"
             (function() {
@@ -174,12 +175,6 @@ pub fn JsonFormatter() -> Element {
                         if (active && active.id === 'json-input') {
                             e.preventDefault();
                             document.getElementById('format-btn').click();
-                        }
-                    }
-                    if ((e.ctrlKey || e.metaKey) && e.code === 'KeyA') {
-                        const active = document.activeElement;
-                        if (active && active.closest('#json-tree-container')) {
-                            e.preventDefault();
                         }
                     }
                 };
