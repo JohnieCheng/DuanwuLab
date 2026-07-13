@@ -42,8 +42,9 @@ pub(super) fn JsonNode(
         None => !should_expand,
     };
 
-    // Auto-expand small children only when the user explicitly clicked to expand
-    let cascade_auto_expand = *manual_collapsed.read() == Some(false);
+    // Auto-expand small children when user clicked to expand, or when this node
+    // was expanded by search (ancestor of the active match)
+    let cascade_auto_expand = *manual_collapsed.read() == Some(false) || is_current_match_path;
 
     let (key_match_idx, val_match_idx) = match search_res.path_to_match.get(&path) {
         Some(&(idx, is_key)) => {
