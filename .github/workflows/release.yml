@@ -116,6 +116,8 @@ jobs:
             | macOS | ARM64 |
             | Windows | x64 |
             | Linux | x64 |
+
+            **Full Changelog**: https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}
           draft: true
           files: ${{ env.ASSETS }}/*
         env:
