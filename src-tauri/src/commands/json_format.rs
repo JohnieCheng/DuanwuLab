@@ -224,9 +224,9 @@ fn tokenize_and_repair(input: &str) -> String {
                 result.push_str(&word);
                 result.push('"');
                 // Restore whitespace
-                for k in ws_start..i {
-                    if chars[k].is_whitespace() {
-                        result.push(chars[k]);
+                for &ch in &chars[ws_start..i] {
+                    if ch.is_whitespace() {
+                        result.push(ch);
                     }
                 }
                 result.push(':');
@@ -234,8 +234,8 @@ fn tokenize_and_repair(input: &str) -> String {
             } else {
                 // False alarm: restore word + whitespace unchanged
                 result.push_str(&word);
-                for k in ws_start..i {
-                    result.push(chars[k]);
+                for &ch in &chars[ws_start..i] {
+                    result.push(ch);
                 }
             }
             continue;
