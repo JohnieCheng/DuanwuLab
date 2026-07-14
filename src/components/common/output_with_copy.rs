@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 
 /// Reusable output panel with a copy-to-clipboard button.
 #[component]
-pub fn OutputWithCopy(output: Signal<String>) -> Element {
+pub fn OutputWithCopy(output: ReadSignal<String>) -> Element {
     let mut copied = use_signal(|| false);
 
     rsx! {

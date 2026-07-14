@@ -3,12 +3,14 @@ use strum::{EnumIter, IntoEnumIterator};
 
 use crate::components::base64::Base64;
 use crate::components::json_viewer::JsonFormatter;
+use crate::components::unix_timestamp::UnixTimestamp;
 use crate::components::url_codec::UrlCodec;
 
 #[derive(Clone, Copy, PartialEq, EnumIter)]
 pub enum Page {
     JsonFormatter,
     Base64,
+    UnixTimestamp,
     UrlCodec,
 }
 
@@ -17,6 +19,7 @@ impl Page {
         match self {
             Page::JsonFormatter => "JSON Formatter",
             Page::Base64 => "Base64",
+            Page::UnixTimestamp => "Unix Timestamp",
             Page::UrlCodec => "URL Codec",
         }
     }
@@ -25,6 +28,7 @@ impl Page {
         match self {
             Page::JsonFormatter => "{{}}",
             Page::Base64 => "A⟷a",
+            Page::UnixTimestamp => "⏱",
             Page::UrlCodec => "%",
         }
     }
@@ -33,6 +37,7 @@ impl Page {
         match self {
             Page::JsonFormatter => rsx! { JsonFormatter{} },
             Page::Base64 => rsx! { Base64{} },
+            Page::UnixTimestamp => rsx! { UnixTimestamp{} },
             Page::UrlCodec => rsx! { UrlCodec{} },
         }
     }
