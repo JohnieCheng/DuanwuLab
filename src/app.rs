@@ -1,7 +1,7 @@
 use dioxus::document::eval;
 use dioxus::prelude::*;
 
-use crate::components::error_toast::ErrorToast;
+use crate::components::common::error_toast::ErrorToast;
 use crate::components::layout::{Page, SidebarLayout};
 use crate::context::error::GlobalErrorContext;
 
