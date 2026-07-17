@@ -3,6 +3,7 @@ use strum::{EnumIter, IntoEnumIterator};
 
 use crate::components::base64::Base64;
 use crate::components::json_viewer::JsonFormatter;
+use crate::components::password_gen::PasswordGen;
 use crate::components::unix_timestamp::UnixTimestamp;
 use crate::components::url_codec::UrlCodec;
 
@@ -12,6 +13,7 @@ pub enum Page {
     Base64,
     UnixTimestamp,
     UrlCodec,
+    PasswordGen,
 }
 
 impl Page {
@@ -21,6 +23,7 @@ impl Page {
             Page::Base64 => "Base64",
             Page::UnixTimestamp => "Unix Timestamp",
             Page::UrlCodec => "URL Codec",
+            Page::PasswordGen => "Password Gen",
         }
     }
 
@@ -30,6 +33,7 @@ impl Page {
             Page::Base64 => "64",
             Page::UnixTimestamp => "ts",
             Page::UrlCodec => "%%",
+            Page::PasswordGen => "pw",
         }
     }
 
@@ -39,6 +43,7 @@ impl Page {
             Page::Base64 => rsx! { Base64{} },
             Page::UnixTimestamp => rsx! { UnixTimestamp{} },
             Page::UrlCodec => rsx! { UrlCodec{} },
+            Page::PasswordGen => rsx! { PasswordGen{} },
         }
     }
 }
