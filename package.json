@@ -9,6 +9,7 @@
     "tailwindcss": "^4.3.2"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2",
     "concurrently": "^10.0.3"
   }
 }

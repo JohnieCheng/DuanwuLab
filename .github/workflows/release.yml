@@ -27,22 +27,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Cache Rust build artifacts to speed up subsequent runs
       - name: Cache Rust
         uses: Swatinem/rust-cache@v2
         with:
           key: ${{ matrix.target }}
+          cache-on-failure: true
 
+      # Setup Rust toolchain with correct target triples
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown,${{ matrix.target }}
 
-      - name: Install Dioxus CLI
-        run: cargo install dioxus-cli --locked
+      # Setup Node.js with package caching enabled for faster npm installation
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: 'npm'
 
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli --locked
-
+      # Install Linux native dependencies required by WebKit and Tauri
       - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: |
@@ -54,12 +59,17 @@ jobs:
             patchelf \
             libasound2-dev
 
+      - name: Install Dioxus CLI
+        run: cargo install dioxus-cli --locked
+
       - name: Install npm dependencies
         run: npm ci
 
+      # Use npx-based Tauri CLI instead of cargo install to save compiling time
       - name: Build Tauri app
-        run: cargo tauri build --target ${{ matrix.target }}
+        run: npx tauri build --target ${{ matrix.target }}
 
+      # Read app product name from tauri configuration
       - name: Read app name
         id: meta
         shell: bash
@@ -67,23 +77,84 @@ jobs:
           APP=$(jq -r '.productName' src-tauri/tauri.conf.json)
           echo "app=$APP" >> "$GITHUB_OUTPUT"
 
+      # Handle macOS signing and packaging
       - name: Ad-hoc sign macOS app
         if: matrix.suffix == 'macos-arm64'
         run: |
           BUNDLE=$(find . -type d -name bundle -path "*/release/*" 2>/dev/null | head -1)
-          APP="$BUNDLE/macos/${{ steps.meta.outputs.app }}.app"
-          codesign --force --deep --sign - "$APP"
-          # repack dmg with signed app
+          if [ -z "$BUNDLE" ] || [ ! -d "$BUNDLE" ]; then
+            echo "::error::Bundle directory not found on macOS build!"
+            exit 1
+          fi
+          
+          APP_PATH="$BUNDLE/macos/${{ steps.meta.outputs.app }}.app"
+          codesign --force --deep --sign - "$APP_PATH"
+          
+          # Repack dmg with the newly signed app
           DMG_OLD=$(ls "$BUNDLE/dmg"/*.dmg | head -1)
           DMG_NEW="$BUNDLE/dmg/tmp-signed.dmg"
           hdiutil create -srcfolder "$BUNDLE/macos" -volname "${{ steps.meta.outputs.app }}" -fs HFS+ -format UDZO "$DMG_NEW"
           rm -f "$DMG_OLD"
           mv "$DMG_NEW" "$DMG_OLD"
+          
+          # Repack .app.tar.gz with the newly signed app for auto-updater compatibility
+          TAR_GZ="$BUNDLE/macos/${{ steps.meta.outputs.app }}.app.tar.gz"
+          if [ -f "$TAR_GZ" ]; then
+            echo "Repacking signed macOS .app.tar.gz package..."
+            rm -f "$TAR_GZ"
+            tar -czf "$TAR_GZ" -C "$BUNDLE/macos" "${{ steps.meta.outputs.app }}.app"
+          fi
 
+      - name: Create portable archive (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          NAME="${{ steps.meta.outputs.app }}"
+          # Read the pipeline tag (e.g., v0.1.0) and matrix suffix (windows-x64)
+          TAG="${{ github.ref_name }}"
+          SUFFIX="${{ matrix.suffix }}"
+
+          # Convert to Unix-style paths so they work under Git Bash
+          UNIX_TEMP=$(cygpath -u "$RUNNER_TEMP")
+          PORTABLE_DIR="$UNIX_TEMP/$NAME-portable"
+          ASSETS_DIR="$UNIX_TEMP/assets"
+
+          mkdir -p "$PORTABLE_DIR"
+          mkdir -p "$ASSETS_DIR"
+
+          # Find the bare exe (exclude bundle/ so we don't pick up the installer)
+          EXE=$(find . -name "$NAME.exe" -not -path "*/bundle/*" -not -path "*/deps/*" -not -path "*/build/*" -type f 2>/dev/null | head -1)
+          if [ -z "$EXE" ]; then
+            echo "::error::No executable found for $NAME.exe"
+            exit 1
+          fi
+          echo "Found Executable: '$EXE'"
+
+          # Only copy the main binary — truly portable single-file green version
+          cp "$EXE" "$PORTABLE_DIR/"
+
+          # Pack into zip
+          cd "$PORTABLE_DIR"
+          7z a -tzip "$PORTABLE_DIR.zip" *
+
+          # Build a clean uniform filename and move to the shared assets directory
+          # Pattern: duanwu-lab-v0.1.0-windows-x64-portable.zip
+          ZIP_NAME="${NAME}-${TAG}-${SUFFIX}-portable.zip"
+          mv "$PORTABLE_DIR.zip" "$ASSETS_DIR/$ZIP_NAME"
+
+          echo "Portable zip created with uniform style: $ASSETS_DIR/$ZIP_NAME"
+
+      # Copy all build outputs, rename them properly, and prepare for release upload
       - name: Normalize asset names
         shell: bash
         run: |
           BUNDLE=$(find . -type d -name bundle -path "*/release/*" 2>/dev/null | head -1)
+          
+          if [ -z "$BUNDLE" ] || [ ! -d "$BUNDLE" ]; then
+            echo "::error::Bundle directory not found! Check previous compilation steps."
+            exit 1
+          fi
+
           ASSETS="$RUNNER_TEMP/assets"
           mkdir -p "$ASSETS"
 
@@ -91,9 +162,12 @@ jobs:
           TAG="${{ github.ref_name }}"
           SUFFIX="${{ matrix.suffix }}"
 
-          find "$BUNDLE" -type f \( -name "*.dmg" -o -name "*.deb" -o -name "*.rpm" \
-            -o -name "*.AppImage" -o -name "*.msi" -o -name "*.exe" \
-            -o -name "*.app.tar.gz" \) | while read -r f; do
+          echo "Scanning assets in $BUNDLE..."
+          copied_count=0
+
+          # Use process substitution to keep the loop counter accessible in parent scope
+          while read -r f; do
+            [ -f "$f" ] || continue
             ext="${f##*.}"
             case "$f" in
               *.app.tar.gz) ext="app.tar.gz" ;;
@@ -101,10 +175,21 @@ jobs:
             esac
             new="${NAME}-${TAG}-${SUFFIX}.${ext}"
             cp "$f" "$ASSETS/$new"
-            echo " -> $new"
-          done
+            echo " -> Asset registered: $new"
+            copied_count=$((copied_count + 1))
+          done < <(find "$BUNDLE" -type f \( -name "*.dmg" -o -name "*.deb" -o -name "*.rpm" \
+            -o -name "*.AppImage" -o -name "*.msi" -o -name "*.exe" \
+            -o -name "*.zip" -o -name "*.app.tar.gz" \))
+
+          # Stop early if no valid assets were resolved, avoiding downstream API upload errors
+          if [ "$copied_count" -eq 0 ]; then
+            echo "::error::No release targets matched! Check target extensions."
+            exit 1
+          fi
+
           echo "ASSETS=$ASSETS" >> "$GITHUB_ENV"
 
+      # Upload files to GitHub Draft Release
       - name: Upload to Release
         uses: softprops/action-gh-release@v2
         with:
