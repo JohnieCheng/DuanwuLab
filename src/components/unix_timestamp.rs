@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
 
 use crate::components::common::output_with_copy::OutputWithCopy;
+use crate::components::common::pill_select::PillSelect;
 
 /// Unix-timestamp ↔ date converter.
 #[component]
@@ -28,20 +29,15 @@ pub fn UnixTimestamp() -> Element {
                 }
             }
 
-            div { class: "flex items-center gap-3",
-                span { class: "text-xs text-gray-400 dark:text-gray-500 select-none", "Timezone" }
-                select {
-                    class: "appearance-none rounded-full border border-gray-200 bg-transparent py-1.5 pl-3 pr-7 text-xs text-gray-500 bg-no-repeat transition-colors hover:border-gray-300 dark:border-gray-700 dark:text-gray-400 dark:hover:border-gray-600 focus:outline-none",
-                    style: "background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%239ca3af' d='M2 3.5l3 3 3-3'/%3E%3C/svg%3E\");background-position:right 8px center",
-                    onchange: move |e: FormEvent| {
-                        if let Some(t) = Timezone::all().iter().find(|t| t.name() == e.value()) {
-                            tz.set(*t);
-                        }
-                    },
-                    for t in Timezone::all() {
-                        option { value: "{t.name()}", selected: tz.read().name() == t.name(), "{t.name()}" }
+            PillSelect {
+                label: "Timezone",
+                options: Timezone::all_options(),
+                selected: tz.read().name().to_string(),
+                onchange: move |v: String| {
+                    if let Some(t) = Timezone::all().iter().find(|t| t.name() == v) {
+                        tz.set(*t);
                     }
-                }
+                },
             }
 
             if !output.read().is_empty() {
@@ -172,6 +168,13 @@ impl Timezone {
             Timezone::Noumea,
             Timezone::Auckland,
         ]
+    }
+
+    fn all_options() -> &'static [(&'static str, &'static str)] {
+        use std::sync::LazyLock;
+        static OPTS: LazyLock<Vec<(&str, &str)>> =
+            LazyLock::new(|| Timezone::all().iter().map(|t| (t.name(), t.name())).collect());
+        &OPTS
     }
 }
 

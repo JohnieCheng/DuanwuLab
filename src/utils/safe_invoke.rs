@@ -10,6 +10,13 @@ extern "C" {
     async fn invoke(cmd: &str, args: JsValue) -> Result<JsValue, JsValue>;
 }
 
+fn is_tauri() -> bool {
+    js_sys::eval("typeof window.__TAURI__ !== 'undefined'")
+        .ok()
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+}
+
 /// Call a Tauri backend command, serializing the request and deserializing
 /// the response. Errors are automatically written into the global error context
 /// so the toast in `App` picks them up.
@@ -25,6 +32,14 @@ where
     T: for<'de> serde::Deserialize<'de>,
     REQ: serde::Serialize,
 {
+    // 0. Guard: skip if not running inside Tauri (e.g., dx serve)
+    if !is_tauri() {
+        error_ctx.message.set(Some(
+            "Tauri runtime not available — run with `cargo tauri dev`, not `dx serve`".to_string(),
+        ));
+        return None;
+    }
+
     // 1. Serialize request parameters to JS values
     let js_args = match serde_wasm_bindgen::to_value(&args) {
         Ok(v) => v,
@@ -35,7 +50,8 @@ where
     };
 
     // 2. Call the Tauri IPC bridge
-    match invoke(cmd, js_args).await {
+    let raw = invoke(cmd, js_args).await;
+    match raw {
         Ok(raw_js_val) => {
             // 3. Deserialize the successful response from the backend
             match serde_wasm_bindgen::from_value::<T>(raw_js_val) {

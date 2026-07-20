@@ -1,6 +1,7 @@
 use dioxus::document::eval;
 use dioxus::prelude::*;
 
+use crate::components::common::button::{Button, ButtonVariant};
 use crate::components::common::output_with_copy::OutputWithCopy;
 
 const HEX: &[u8; 16] = b"0123456789ABCDEF";
@@ -39,26 +40,14 @@ pub fn UrlCodec() -> Element {
             }
 
             div { class: "flex items-center gap-3",
-                button {
-                    class: "rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-gray-900",
-                    onclick: move |_| output.set(url_encode(&input.read())),
-                    "Encode URL"
-                }
-                button {
-                    class: "rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300",
-                    onclick: move |_| output.set(url_encode_component(&input.read())),
-                    "Encode Component"
-                }
-                button {
-                    class: "rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300",
-                    onclick: move |_| {
-                        match url_decode(&input.read()) {
-                            Ok(s) => output.set(s),
-                            Err(e) => output.set(format!("Decode error: {e}")),
-                        }
-                    },
-                    "Decode"
-                }
+                Button { label: "Encode URL", variant: ButtonVariant::Solid, onclick: move |_| output.set(url_encode(&input.read())) }
+                Button { label: "Encode Component", variant: ButtonVariant::Outline, onclick: move |_| output.set(url_encode_component(&input.read())) }
+                Button { label: "Decode", variant: ButtonVariant::Outline, onclick: move |_| {
+                    match url_decode(&input.read()) {
+                        Ok(s) => output.set(s),
+                        Err(e) => output.set(format!("Decode error: {e}")),
+                    }
+                }}
             }
 
             if !output.read().is_empty() {

@@ -4,6 +4,7 @@ use dioxus::document::eval;
 use dioxus::prelude::*;
 use serde_json::Value;
 
+use crate::components::common::button::{Button, ButtonVariant};
 use crate::context::error::GlobalErrorContext;
 use crate::utils::safe_invoke::safe_invoke;
 
@@ -208,12 +209,10 @@ pub fn JsonFormatter() -> Element {
                     "Auto-format"
                 }
                 div { class: "flex-1" }
-                button { id: "format-btn", class: "rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-gray-900", onclick: move |_| {
+                Button { label: "Format", variant: ButtonVariant::Solid, id: "format-btn", onclick: move |_| {
                     let text = input_text.read().clone();
-                    if !text.trim().is_empty() {
-                        format_text(text);
-                    }
-                }, "Format" }
+                    if !text.trim().is_empty() { format_text(text); }
+                }}
             }
 
             if !output.read().is_empty() {

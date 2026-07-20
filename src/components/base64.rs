@@ -1,6 +1,7 @@
 use dioxus::document::eval;
 use dioxus::prelude::*;
 
+use crate::components::common::button::{Button, ButtonVariant};
 use crate::components::common::output_with_copy::OutputWithCopy;
 
 /// Standalone Base64 encode / decode tool.
@@ -37,21 +38,13 @@ pub fn Base64() -> Element {
             }
 
             div { class: "flex items-center gap-3",
-                button {
-                    class: "rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white dark:bg-white dark:text-gray-900",
-                    onclick: move |_| output.set(base64_encode(&input.read())),
-                    "Encode"
-                }
-                button {
-                    class: "rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300",
-                    onclick: move |_| {
-                        match base64_decode(&input.read()) {
-                            Ok(s) => output.set(s),
-                            Err(e) => output.set(format!("Decode error: {e}")),
-                        }
-                    },
-                    "Decode"
-                }
+                Button { label: "Encode", variant: ButtonVariant::Solid, onclick: move |_| output.set(base64_encode(&input.read())) }
+                Button { label: "Decode", variant: ButtonVariant::Outline, onclick: move |_| {
+                    match base64_decode(&input.read()) {
+                        Ok(s) => output.set(s),
+                        Err(e) => output.set(format!("Decode error: {e}")),
+                    }
+                }}
             }
 
             if !output.read().is_empty() {
