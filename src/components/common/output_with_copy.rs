@@ -29,7 +29,7 @@ pub fn OutputWithCopy(output: ReadSignal<String>) -> Element {
                             copied.set(false);
                         });
                     },
-                    if *copied.read() { "✓ Copied" } else { "📋 Copy" }
+                    if *copied.read() { "✓ Copied" } else { "Copy" }
                 }
             }
             pre { class: "whitespace-pre-wrap break-all rounded-lg border border-gray-200 bg-gray-50 p-4 font-mono text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 select-text",

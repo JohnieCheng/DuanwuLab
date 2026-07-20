@@ -1,7 +1,7 @@
-use dioxus::document::eval;
 use dioxus::prelude::*;
 
 use crate::components::common::button::{Button, ButtonVariant};
+use crate::components::common::clear_button::ClearButton;
 use crate::components::common::output_with_copy::OutputWithCopy;
 
 const HEX: &[u8; 16] = b"0123456789ABCDEF";
@@ -27,14 +27,7 @@ pub fn UrlCodec() -> Element {
                         oninput: move |e: FormEvent| input.set(e.value()),
                     }
                     if !input.read().is_empty() {
-                        button {
-                            class: "absolute top-3 right-3 rounded border border-gray-200 bg-white px-2 py-0.5 text-[11px] text-gray-400 hover:text-red-500 hover:border-red-200 dark:border-gray-700 dark:bg-gray-900 dark:hover:text-red-400 transition-colors select-none",
-                            onclick: move |_| {
-                                input.set(String::new());
-                                eval("var t=document.getElementById('url-input');if(t)t.value=''");
-                            },
-                            "✕ Clear"
-                        }
+                        ClearButton { input_id: "url-input", on_clear: move |_| { input.set(String::new()); output.set(String::new()); } }
                     }
                 }
             }

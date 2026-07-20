@@ -1,7 +1,7 @@
-use dioxus::document::eval;
 use dioxus::prelude::*;
 
 use super::constants::AUTO_FORMAT_DEBOUNCE_MS;
+use crate::components::common::clear_button::ClearButton;
 
 #[component]
 pub(super) fn JsonInputEditor(
@@ -39,15 +39,13 @@ pub(super) fn JsonInputEditor(
                 },
             }
             if !local_input.read().is_empty() {
-                button {
-                    class: "absolute top-3 right-3 rounded border border-gray-200 bg-white px-2 py-0.5 text-[11px] text-gray-400 hover:text-red-500 hover:border-red-200 dark:border-gray-700 dark:bg-gray-900 dark:hover:text-red-400 transition-colors select-none",
-                    onclick: move |_| {
+                ClearButton {
+                    input_id: "json-input",
+                    on_clear: move |_| {
                         local_input.set(String::new());
                         input_text.set(String::new());
-                        eval("var t=document.getElementById('json-input');if(t)t.value=''");
                         on_clear.call(());
                     },
-                    "✕ Clear"
                 }
             }
         }
