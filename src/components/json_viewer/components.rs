@@ -8,25 +8,24 @@ pub(crate) fn RenderHighlighted(props: HighlightProps) -> Element {
     match props.match_idx {
         Some(idx) => {
             let is_active = idx == props.active_global_idx;
-            if !props.query.is_empty() {
-                if let Some(start_idx) = props.text.to_lowercase().find(&props.query.to_lowercase())
-                {
-                    let end_idx = start_idx + props.query.len();
-                    return rsx! {
+            if !props.query.is_empty()
+                && let Some(start_idx) = props.text.to_lowercase().find(&props.query.to_lowercase())
+            {
+                let end_idx = start_idx + props.query.len();
+                return rsx! {
+                    span {
+                        class: "{props.default_class}",
+                        "{&props.text[..start_idx]}"
                         span {
-                            class: "{props.default_class}",
-                            "{&props.text[..start_idx]}"
-                            span {
-                                id: format!("search-match-{}", idx),
-                                class: "rounded px-0.5 shadow-sm",
-                                class: if is_active { "bg-orange-500 text-white font-bold ring-2 ring-orange-300" },
-                                class: if !is_active { "bg-yellow-200 dark:bg-yellow-800 text-gray-900 dark:text-gray-100" },
-                                "{&props.text[start_idx..end_idx]}"
-                            }
-                            "{&props.text[end_idx..]}"
+                            id: format!("search-match-{}", idx),
+                            class: "rounded px-0.5 shadow-sm",
+                            class: if is_active { "bg-orange-500 text-white font-bold ring-2 ring-orange-300" },
+                            class: if !is_active { "bg-yellow-200 dark:bg-yellow-800 text-gray-900 dark:text-gray-100" },
+                            "{&props.text[start_idx..end_idx]}"
                         }
-                    };
-                }
+                        "{&props.text[end_idx..]}"
+                    }
+                };
             }
             rsx! {
                 span {

@@ -85,22 +85,22 @@ pub fn JsonFormatter() -> Element {
         let q = search_query.read();
         let active_idx = *active_index.read();
 
-        if !q.is_empty() {
-            if let Some(v) = parsed_json.read().as_ref() {
-                let q_low = q.to_lowercase();
-                find_json_matches(v, &q_low, "", &mut list);
+        if !q.is_empty()
+            && let Some(v) = parsed_json.read().as_ref()
+        {
+            let q_low = q.to_lowercase();
+            find_json_matches(v, &q_low, "", &mut list);
 
-                for (idx, m) in list.iter().enumerate() {
-                    path_to_match.insert(m.path.clone(), (idx, m.is_key));
-                }
+            for (idx, m) in list.iter().enumerate() {
+                path_to_match.insert(m.path.clone(), (idx, m.is_key));
+            }
 
-                if let Some(active_match) = list.get(active_idx) {
-                    let mut temp_path = String::new();
-                    for part in active_match.path.split('/').filter(|s| !s.is_empty()) {
-                        temp_path.push_str("/");
-                        temp_path.push_str(part);
-                        active_ancestor_paths.insert(temp_path.clone());
-                    }
+            if let Some(active_match) = list.get(active_idx) {
+                let mut temp_path = String::new();
+                for part in active_match.path.split('/').filter(|s| !s.is_empty()) {
+                    temp_path.push('/');
+                    temp_path.push_str(part);
+                    active_ancestor_paths.insert(temp_path.clone());
                 }
             }
         }
@@ -254,7 +254,7 @@ pub fn JsonFormatter() -> Element {
                                         copied.set(false);
                                     });
                                 },
-                                if *copied.read() { "✓ Copied" } else { "📋 Copy" }
+                                if *copied.read() { "✓ Copied" } else { "Copy" }
                             }
                         }
                     }

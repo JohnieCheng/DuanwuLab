@@ -1,5 +1,6 @@
 pub mod base64;
 pub mod common;
+pub mod image_compressor;
 pub mod json_viewer;
 pub mod jwt;
 pub mod layout;

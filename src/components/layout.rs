@@ -3,11 +3,13 @@ use strum::{EnumIter, IntoEnumIterator};
 
 use crate::components::base64::Base64;
 use crate::components::common::nav_item::NavItem;
+use crate::components::image_compressor::ImageCompressor;
 use crate::components::json_viewer::JsonFormatter;
 use crate::components::jwt::Jwt;
 use crate::components::password_gen::PasswordGen;
 use crate::components::unix_timestamp::UnixTimestamp;
 use crate::components::url_codec::UrlCodec;
+use crate::context::store_provider::use_init_app_state;
 
 #[derive(Clone, Copy, PartialEq, EnumIter)]
 pub enum Page {
@@ -17,6 +19,7 @@ pub enum Page {
     UrlCodec,
     PasswordGen,
     Jwt,
+    ImageCompressor,
 }
 
 impl Page {
@@ -28,6 +31,7 @@ impl Page {
             Page::UrlCodec => "URL Codec",
             Page::PasswordGen => "Password Gen",
             Page::Jwt => "JWT",
+            Page::ImageCompressor => "Image Compressor",
         }
     }
 
@@ -39,6 +43,7 @@ impl Page {
             Page::UrlCodec => "%%",
             Page::PasswordGen => "pw",
             Page::Jwt => "JT",
+            Page::ImageCompressor => "ic",
         }
     }
 
@@ -50,6 +55,7 @@ impl Page {
             Page::UrlCodec => rsx! { UrlCodec{} },
             Page::PasswordGen => rsx! { PasswordGen{} },
             Page::Jwt => rsx! { Jwt{} },
+            Page::ImageCompressor => rsx! { ImageCompressor{} },
         }
     }
 }
@@ -58,6 +64,9 @@ impl Page {
 #[component]
 pub fn SidebarLayout(page: Signal<Page>) -> Element {
     let mut search = use_signal(String::new);
+
+    // Initialize global state, coroutines, and disk persistence
+    use_init_app_state();
 
     let filtered = use_memo(move || -> Vec<Page> {
         let q = search.read();

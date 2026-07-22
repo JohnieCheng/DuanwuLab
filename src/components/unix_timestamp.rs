@@ -12,7 +12,7 @@ pub fn UnixTimestamp() -> Element {
         Timezone::nearest(local).unwrap_or(Timezone::Shanghai)
     });
 
-    let output = use_memo(move || do_convert(&*input.read(), *tz.read()));
+    let output = use_memo(move || do_convert(&input.read(), *tz.read()));
 
     rsx! {
         div { class: "flex flex-1 flex-col gap-4 p-6 select-none",
@@ -223,6 +223,7 @@ impl Format {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn format_date(
     year: i64,
     month: u32,
@@ -429,7 +430,7 @@ fn parse_date_to_timestamp(s: &str) -> Option<i64> {
         _ => (v1, v2, v3), // all ≤ 31, assume Y-M-D
     };
 
-    if month < 1 || month > 12 || day < 1 || day > 31 {
+    if !(1..=12).contains(&month) || !(1..=31).contains(&day) {
         return None;
     }
     date_to_ts(year, month, day, time_part)

@@ -76,13 +76,13 @@ fn extract_jwt(raw: &str) -> Option<String> {
     let mut i = 0;
     while i < chars.len() {
         // Skip non-b64url chars, try to match a JWT from here
-        if is_b64url(chars[i]) {
-            if let Some(end) = find_jwt_end(&chars, i) {
-                let candidate: String = chars[i..end].iter().collect();
-                let segments: Vec<&str> = candidate.split('.').collect();
-                if segments.len() == 3 && segments.iter().all(|s| s.len() >= 1) {
-                    return Some(candidate);
-                }
+        if is_b64url(chars[i])
+            && let Some(end) = find_jwt_end(&chars, i)
+        {
+            let candidate: String = chars[i..end].iter().collect();
+            let segments: Vec<&str> = candidate.split('.').collect();
+            if segments.len() == 3 && segments.iter().all(|s| !s.is_empty()) {
+                return Some(candidate);
             }
         }
         i += 1;
@@ -117,12 +117,9 @@ fn decode_segment(seg: &str) -> String {
     let padded = pad(seg);
     match base64_decode(&padded) {
         Ok(bytes) => match String::from_utf8(bytes) {
-            Ok(s) => {
-                let pretty = serde_json::from_str::<serde_json::Value>(&s)
-                    .map(|v| serde_json::to_string_pretty(&v).unwrap_or_else(|_| s.clone()))
-                    .unwrap_or_else(|_| s);
-                pretty
-            }
+            Ok(s) => serde_json::from_str::<serde_json::Value>(&s)
+                .map(|v| serde_json::to_string_pretty(&v).unwrap_or_else(|_| s.clone()))
+                .unwrap_or_else(|_| s),
             Err(_) => format!("<binary data, {} bytes>", padded.len() * 3 / 4),
         },
         Err(e) => format!("<decode error: {e}>"),
@@ -158,7 +155,7 @@ fn hex_val(c: u8) -> Result<u8, ()> {
 
 fn pad(s: &str) -> String {
     let mut s = s.to_string();
-    while s.len() % 4 != 0 {
+    while !s.len().is_multiple_of(4) {
         s.push('=');
     }
     s
