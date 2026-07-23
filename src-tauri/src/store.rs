@@ -35,10 +35,10 @@ impl AppStore {
 
     pub fn load(app: &tauri::AppHandle) -> Self {
         let Ok(path) = Self::storage_path(app) else { return Self::default() };
-        if let Ok(json) = fs::read_to_string(&path) {
-            if let Ok(store) = serde_json::from_str(&json) {
-                return store;
-            }
+        if let Ok(json) = fs::read_to_string(&path)
+            && let Ok(store) = serde_json::from_str(&json)
+        {
+            return store;
         }
         Self::default()
     }

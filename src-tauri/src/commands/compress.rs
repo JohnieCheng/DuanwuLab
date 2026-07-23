@@ -45,7 +45,7 @@ pub async fn compress_single_image(
     path: String,
     quality: u8,
     mode: String,
-    output_dir: Option<String>, // 前端必须传 "outputDir"
+    output_dir: Option<String>,
 ) -> Result<CompressResult, String> {
     tauri::async_runtime::spawn_blocking(move || {
         match compress_single(&path, quality, &mode, output_dir) {
@@ -88,50 +88,48 @@ fn compress_png(img: &image::DynamicImage, quality: u8, mode: &str) -> Result<Ve
             std::slice::from_raw_parts(rgba_img.as_ptr() as *const imagequant::RGBA, width * height)
         };
 
-        if let Ok(mut liq_img) = liq.new_image(input_pixels, width, height, 0.0) {
-            if let Ok(mut res) = liq.quantize(&mut liq_img) {
-                let _ = res.set_dithering_level(0.8);
+        if let Ok(mut liq_img) = liq.new_image(input_pixels, width, height, 0.0)
+            && let Ok(mut res) = liq.quantize(&mut liq_img)
+        {
+            let _ = res.set_dithering_level(0.8);
 
-                if let Ok((palette, remapped_pixels)) = res.remapped(&mut liq_img) {
-                    let mut out_buf = Vec::new();
-                    let mut raw_palette = Vec::with_capacity(palette.len() * 3);
-                    for c in &palette {
-                        raw_palette.push(c.r);
-                        raw_palette.push(c.g);
-                        raw_palette.push(c.b);
+            if let Ok((palette, remapped_pixels)) = res.remapped(&mut liq_img) {
+                let mut out_buf = Vec::new();
+                let mut raw_palette = Vec::with_capacity(palette.len() * 3);
+                for c in &palette {
+                    raw_palette.push(c.r);
+                    raw_palette.push(c.g);
+                    raw_palette.push(c.b);
+                }
+
+                let encode_res: Result<(), String> = {
+                    let mut png_writer =
+                        png::Encoder::new(&mut out_buf, width as u32, height as u32);
+                    png_writer.set_color(png::ColorType::Indexed);
+                    png_writer.set_depth(png::BitDepth::Eight);
+                    png_writer.set_palette(raw_palette);
+
+                    let trns: Vec<u8> = palette.iter().map(|c| c.a).collect();
+                    if trns.iter().any(|&a| a < 255) {
+                        png_writer.set_trns(trns);
                     }
 
-                    let encode_res: Result<(), String> = {
-                        let mut png_writer =
-                            png::Encoder::new(&mut out_buf, width as u32, height as u32);
-                        png_writer.set_color(png::ColorType::Indexed);
-                        png_writer.set_depth(png::BitDepth::Eight);
-                        png_writer.set_palette(raw_palette);
+                    let mut writer =
+                        png_writer.write_header().map_err(|e| format!("PNG header error: {e}"))?;
+                    writer
+                        .write_image_data(&remapped_pixels)
+                        .map_err(|e| format!("PNG write error: {e}"))?;
+                    writer.finish().map_err(|e| format!("PNG finish error: {e}"))?;
+                    Ok(())
+                };
 
-                        let trns: Vec<u8> = palette.iter().map(|c| c.a).collect();
-                        if trns.iter().any(|&a| a < 255) {
-                            png_writer.set_trns(trns);
-                        }
-
-                        let mut writer = png_writer
-                            .write_header()
-                            .map_err(|e| format!("PNG header error: {e}"))?;
-                        writer
-                            .write_image_data(&remapped_pixels)
-                            .map_err(|e| format!("PNG write error: {e}"))?;
-                        writer.finish().map_err(|e| format!("PNG finish error: {e}"))?;
-                        Ok(())
-                    };
-
-                    if encode_res.is_ok() {
-                        return Ok(out_buf);
-                    }
+                if encode_res.is_ok() {
+                    return Ok(out_buf);
                 }
             }
         }
     }
-
-    // 回退到无损 RGBA PNG 编码
+    // lossless RGBA PNG encoding
     let mut out_buf = Vec::new();
     let (png_comp, png_filter) = if mode == "best" {
         (CompressionType::Best, FilterType::Adaptive)
@@ -161,7 +159,7 @@ fn compress_single(
     let path = std::path::Path::new(path_str);
 
     let raw_stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("image");
-    // 清理掉多次压缩可能产生的后缀
+
     let clean_stem = raw_stem.replace(".compressed", "").replace("-compressed", "");
 
     let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown").to_string();
@@ -186,7 +184,6 @@ fn compress_single(
     };
     let out_name = format!("{}.compressed.{}", clean_stem, out_ext);
 
-    // 核心落地路径生成逻辑
     let out_path = if let Some(dir) = output_dir {
         std::path::Path::new(&dir).join(&out_name)
     } else {
@@ -212,7 +209,6 @@ fn compress_single(
 
     let compressed_size = data.len() as u64;
 
-    // 写入或覆盖原文件保护
     let (final_path, final_size) = if compressed_size >= original && original > 0 {
         std::fs::copy(path, &out_path).map_err(|e| format!("Copy original file error: {e}"))?;
         (out_path.to_string_lossy().to_string(), original)
